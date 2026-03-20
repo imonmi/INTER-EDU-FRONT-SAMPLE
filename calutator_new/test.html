@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title> 계산기 실습 </title>
+    <style>
+    :root {
+      --accent: #2fb97f;      /* 연한 그린 포인트 */
+      --text-main: #f9fafb;
+      --text-sub: #d1d5db;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* 배경 그라데이션 */
+      background: #ffffff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+       color: #000000;  /* ✅ 기본 텍스트 색을 검정으로 */
+    }
+
+    /* 공통 글래스 카드 스타일 */
+    .glass {
+  background: #ffffff;                  /* ✅ 완전 흰색 카드 */
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);  /* ✅ 부드러운 그림자 */
+  border: 1px solid rgba(148, 163, 184, 0.3);   /* 얇은 연그레이 보더 */
+  /* ✅ blur/반투명 제거 */
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+
+    .calculator {
+      width: 300px;
+      padding: 18px 18px 22px;
+    }
+
+    .display {
+      width: 100%;
+      height: 90px;
+      margin-bottom: 16px;
+      padding: 8px 12px;
+      border-radius: 14px;
+     background: #f9fafb;                 /* 살짝 밝은 회색 */
+     border: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      overflow: hidden;
+    }
+
+    .display-top {
+      font-size: 13px;
+      text-align: right;
+      color: #000000;   /* ✅ 산출식 연산자 색도 검정으로 */
+      min-height: 18px;
+      white-space: nowrap;
+    }
+
+    .display-bottom {
+      font-size: 26px;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .display-bottom span {
+      color: #000000;   /* ✅ 아래 값 텍스트 검정 */
+    }
+
+    .display-bottom .op,
+    .display-top .op {
+      color: #000000;   /* ✅ 산출식 연산자 색도 검정으로 */
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-auto-rows: 52px;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+  .btn {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25); /* 연한 테두리 */
+  background: #ffffff;                          /* ✅ 완전 흰 배경 */
+  color: #000000;  /* ✅ 버튼 텍스트를 항상 검정으로 */
+  font-size: 17px;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.1s ease-out, transform 0.06s ease-out;
+}
+
+.btn:hover {
+  background: #f9fafb;   /* 아주 살짝만 회색 */
+}
+
+.btn:active {
+  background: #f3f4f6;
+}
+
+
+    .btn:hover {
+      background: rgba(15, 23, 42, 0.65);
+      border-color: rgba(148, 163, 184, 0.8);
+    }
+
+    .btn:active {
+      transform: translateY(1px);
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+   .btn.operator {
+  background: #f0fdf4;                      /* 연한 그린 배경 */
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #16a34a;                           /* 초록 텍스트 */
+}
+
+    .btn.operator:hover {
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .btn.clear {
+  background: #fef2f2;
+  border-color: rgba(248, 113, 113, 0.45);
+  color: #ef4444;
+}
+
+    .btn.clear:hover {
+      background: rgba(15, 23, 42, 0.7);
+    }
+
+    .btn.equal {
+      background: linear-gradient(135deg, #34d399, #22c55e);
+      border-color: rgba(52, 211, 153, 0.8);
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .btn.equal:hover {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+    }
+
+    .btn.equal:active {
+      transform: translateY(1px);
+    }
+
+    .btn[data-action="noop"] {
+      visibility: hidden;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="calculator">
+    <div class="display">
+      <div id="display-top" class="display-top"></div>
+      <div id="display-bottom" class="display-bottom"><span>0</span></div>
+    </div>
+
+    <div class="buttons">
+      <!-- 1행: C, ⌫, (빈칸), + -->
+      <button class="btn clear" data-action="clear">C</button>
+      <button class="btn" data-action="delete">⌫</button>
+      <button class="btn" data-action="noop"></button>
+      <button class="btn operator" data-value="+">+</button>
+
+      <!-- 2행: 7 8 9 - -->
+      <button class="btn" data-value="7">7</button>
+      <button class="btn" data-value="8">8</button>
+      <button class="btn" data-value="9">9</button>
+      <button class="btn operator" data-value="-">-</button>
+
+      <!-- 3행: 4 5 6 × -->
+      <button class="btn" data-value="4">4</button>
+      <button class="btn" data-value="5">5</button>
+      <button class="btn" data-value="6">6</button>
+      <button class="btn operator" data-value="*">×</button>
+
+      <!-- 4행: 1 2 3 ÷ -->
+      <button class="btn" data-value="1">1</button>
+      <button class="btn" data-value="2">2</button>
+      <button class="btn" data-value="3">3</button>
+      <button class="btn operator" data-value="/">÷</button>
+
+      <!-- 5행: 0 00 . = -->
+      <button class="btn" data-value="0">0</button>
+      <button class="btn" data-value="00">00</button>
+      <button class="btn" data-value=".">.</button>
+      <button class="btn equal" data-action="calculate">=</button>
+    </div>
+  </div>
+
+  <script>
+  const displayTop = document.getElementById('display-top');
+  const displayBottom = document.getElementById('display-bottom');
+  const buttons = document.querySelector('.buttons');
+
+  let expression = '';    // 전체 수식 (계산용)
+  let current = '';       // 현재 입력 값(아래 줄)
+  const operators = ['+', '-', '*', '/'];
+
+  let shouldResetCurrentOnNextNumber = false;
+  let justCalculated = false;
+
+  function renderBottom() {
+    const value = current || '0';
+    let html = '';
+    for (const ch of value) {
+      let shown = ch;
+      if (ch === '*') shown = '×';
+      if (ch === '/') shown = '÷';
+
+      if (operators.includes(ch)) {
+        html += `<span class="op">${shown}</span>`;
+      } else {
+        html += `<span>${shown}</span>`;
+      }
+    }
+    displayBottom.innerHTML = html || '<span>0</span>';
+  }
+
+  function renderTop(expr) {
+    if (!expr) {
+      displayTop.textContent = '';
+      return;
+    }
+
+    let html = '';
+    for (const ch of expr) {
+      let shown = ch;
+      if (ch === '*') shown = '×';
+      if (ch === '/') shown = '÷';
+
+      if (operators.includes(ch)) {
+        html += `<span class="op">${shown}</span>`;
+      } else {
+        html += `<span>${shown}</span>`;
+      }
+    }
+    displayTop.innerHTML = html;
+  }
+
+  // =========================
+  //   값 추가 (버튼/키 입력)
+  // =========================
+  function appendValue(value) {
+    const lastChar = expression.slice(-1);
+
+    if (operators.includes(value)) {
+      // ===== 연산자 입력 시 =====
+      if (justCalculated) {
+        // 결과값을 시작으로 새 식을 만들면서, 위쪽에 '=' 없이 다시 그리기
+        expression = current + value;   // 예: "8+"
+        justCalculated = false;
+      } else {
+        if (operators.includes(lastChar)) {
+          // 마지막도 연산자면 교체
+          expression = expression.slice(0, -1) + value;
+        } else if (expression === '' && current === '') {
+          // 맨 처음 연산자만 들어오는 건 막음
+          return;
+        } else {
+          // 현재 숫자가 expression 끝에 없으면 붙여주고, 연산자 추가
+          if (current !== '' && !expression.endsWith(current)) {
+            expression += current;
+          }
+          expression += value;
+        }
+      }
+
+      shouldResetCurrentOnNextNumber = true;
+
+      // 여기서는 '=' 없이 현재 식만 보여주기
+      renderTop(expression);
+      renderBottom();
+    } else {
+      // ===== 숫자/점 입력 시 =====
+      if (shouldResetCurrentOnNextNumber) {
+        current = '';
+        shouldResetCurrentOnNextNumber = false;
+      }
+
+      // 숫자를 새로 입력하는 순간, 기존 '=' 표시가 있었다면 제거
+      if (justCalculated) {
+        expression = '';     // 위쪽 식 초기화
+        renderTop('');       // '... =' 라인 지우기
+        justCalculated = false;
+      }
+
+      current += value;
+      renderBottom();
+    }
+  }
+
+  function clearAll() {
+    expression = '';
+    current = '';
+    shouldResetCurrentOnNextNumber = false;
+    justCalculated = false;
+    renderTop('');
+    renderBottom();
+  }
+
+  function deleteLast() {
+    if (current) {
+      current = current.slice(0, -1);
+      renderBottom();
+    } else if (expression) {
+      expression = expression.slice(0, -1);
+      renderTop(expression);
+    }
+  }
+
+  // =========================
+  //        계산 (=)
+  // =========================
+  function calculate() {
+  // 1) 현재 식 또는 "마지막 연산 반복"인지 판단
+  if (!expression && justCalculated && lastOperator && lastOperand != null) {
+    // ✅ 이미 결과가 나온 상태에서 = 를 다시 누른 경우:
+    //    current (현재 결과)에 마지막 연산을 한 번 더 적용
+    const base = Number(current);
+    let next;
+
+    if (lastOperator === '+') {
+      next = base + lastOperand;
+    } else if (lastOperator === '-') {
+      next = base - lastOperand;
+    } else if (lastOperator === '*') {
+      next = base * lastOperand;
+    } else if (lastOperator === '/') {
+      next = base / lastOperand;
+    } else {
+      return;
+    }
+
+    // 정수/소수 포맷
+    let displayValue;
+    if (Number.isInteger(next)) {
+      displayValue = String(next);
+    } else {
+      displayValue = next.toFixed(10);
+    }
+
+    // 위: 이전 결과(base)와 마지막 연산을 다시 표시
+    renderTop(base + ' ' + lastOperator + ' ' + lastOperand + ' =');
+    current = displayValue;
+    expression = '';
+    shouldResetCurrentOnNextNumber = true;
+    justCalculated = true;
+    renderBottom();
+    return;
+  }
+
+  // 2) 평소처럼 expression + current로 계산
+  if (current !== '') {
+    if (!expression.endsWith(current)) {
+      expression += current;
+    }
+  }
+  if (!expression) return;
+
+  const lastChar = expression.slice(-1);
+  if (operators.includes(lastChar)) {
+    expression = expression.slice(0, -1);
+  }
+  if (!expression) {
+    renderTop('');
+    renderBottom();
+    return;
+  }
+
+  // 3) expression 안에서 "마지막 연산자와 피연산자" 추출
+  let opIndex = -1;
+  let opChar = null;
+  for (let i = expression.length - 1; i >= 0; i--) {
+    const ch = expression[i];
+    if (operators.includes(ch)) {
+      opIndex = i;
+      opChar = ch;
+      break;
+    }
+  }
+  if (opIndex !== -1) {
+    const operandStr = expression.slice(opIndex + 1);
+    const operandNum = Number(operandStr);
+    if (!Number.isNaN(operandNum)) {
+      lastOperator = opChar;
+      lastOperand = operandNum;
+    } else {
+      lastOperator = null;
+      lastOperand = null;
+    }
+  } else {
+    lastOperator = null;
+    lastOperand = null;
+  }
+
+  try {
+    const raw = Function('"use strict";return (' + expression + ')')();
+    const result = Number(raw);
+
+    let displayValue;
+    if (Number.isInteger(result)) {
+      displayValue = String(result);
+    } else {
+      displayValue = result.toFixed(10);
+    }
+
+    // 계산 직후에만 산출식 + '=' 표시
+    renderTop(expression + ' =');
+
+    // 아래: 결과값
+    current = displayValue;
+
+    // 이후 연산은 결과값을 기준으로 새로 시작
+    expression = '';
+    shouldResetCurrentOnNextNumber = true;
+    justCalculated = true;
+
+    renderBottom();
+  } catch (e) {
+    expression = '';
+    current = '';
+    justCalculated = false;
+    renderTop('');
+    displayBottom.innerHTML = '<span class="op">에러</span>';
+  }
+}
+
+
+  function handleInput({ value, action }) {
+    if (action === 'clear') {
+      clearAll();
+    } else if (action === 'delete') {
+      deleteLast();
+    } else if (action === 'calculate') {
+      calculate();
+    } else if (action === 'noop') {
+      return;
+    } else if (value != null) {
+      appendValue(value);
+    }
+  }
+
+  // 마우스 클릭
+  buttons.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!target.classList.contains('btn')) return;
+
+    handleInput({
+      value: target.getAttribute('data-value'),
+      action: target.getAttribute('data-action'),
+    });
+  });
+
+  // 키보드 입력
+  document.addEventListener('keydown', (event) => {
+    const key = event.key;
+
+    if (key === 'Escape') {
+      handleInput({ action: 'clear' });
+    } else if (key === 'Backspace') {
+      handleInput({ action: 'delete' });
+    } else if (key === 'Enter' || key === '=') {
+      event.preventDefault();
+      handleInput({ action: 'calculate' });
+    } else if (/^[0-9]$/.test(key)) {
+      handleInput({ value: key });
+    } else if (key === '.') {
+      handleInput({ value: '.' });
+    } else if (key === '+') {
+      handleInput({ value: '+' });
+    } else if (key === '-') {
+      handleInput({ value: '-' });
+    } else if (key === '*' || key === 'x' || key === 'X') {
+      handleInput({ value: '*' });
+    } else if (key === '/') {
+      handleInput({ value: '/' });
+    } else {
+      return;
+    }
+  });
+
+  // 초기 렌더
+  renderBottom();
+</script>
+</body>
+</html>
+
